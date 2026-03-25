@@ -1,0 +1,117 @@
+# ==============================================================================
+# FastAPI App Helm Chart - Default values
+# ==============================================================================
+
+replicaCount: 1
+
+image:
+  repository: "HERE_ARTIFACT_REGISTRY_URL/fastapi-app"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+# --- Service Account (GKE Workload Identity) ---
+serviceAccount:
+  create: true
+  name: "fastapi-app"
+  annotations:
+    iam.gke.io/gcp-service-account: "HERE_APP_SERVICE_ACCOUNT_EMAIL"
+
+# --- Service ---
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+# --- Ingress ---
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: "HERE_APP_DOMAIN"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: fastapi-app-tls
+      hosts:
+        - "HERE_APP_DOMAIN"
+
+# --- HPA (Horizontal Pod Autoscaler) ---
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# --- Resources ---
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# --- Pod Disruption Budget ---
+pdb:
+  enabled: false
+  minAvailable: 1
+
+# --- Cloud SQL Auth Proxy sidecar ---
+cloudSqlProxy:
+  enabled: true
+  instanceConnectionName: "HERE_CLOUDSQL_CONNECTION_NAME"
+  image: "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.13.0"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# --- Environment variables ---
+env:
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "INFO"
+  DATABASE_HOST: "127.0.0.1"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "taskmanager"
+  DATABASE_USER: "taskmanager"
+  DATABASE_PASSWORD: ""
+  JWT_SECRET_KEY: ""
+  RATE_LIMIT: "100/minute"
+
+# --- Node selector ---
+nodeSelector:
+  cloud.google.com/gke-nodepool: "app-pool"
+
+# --- Tolerations ---
+tolerations: []
+
+# --- Affinity ---
+affinity: {}
+
+# --- Pod security context ---
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# --- Container security context ---
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

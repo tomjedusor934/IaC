@@ -1,0 +1,153 @@
+# ==============================================================================
+# Prometheus Alert Rules - Custom alerts for the Task Manager application
+# ==============================================================================
+# Apply this as a PrometheusRule CRD in the monitoring namespace
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: fastapi-app-alerts
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prometheus-stack
+spec:
+  groups:
+    # --- Application Alerts ---
+    - name: fastapi-app.rules
+      rules:
+        - alert: HighErrorRate
+          expr: >
+            (
+              sum(rate(http_requests_total{status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total[5m]))
+            ) > 0.05
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High 5xx error rate (> 5%)"
+            description: "The FastAPI app is returning more than 5% server errors over the last 5 minutes."
+
+        - alert: HighLatencyP95
+          expr: >
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+            > 1.0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High P95 latency (> 1s)"
+            description: "95th percentile request latency is above 1 second for the last 5 minutes."
+
+        - alert: HighLatencyP99
+          expr: >
+            histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+            > 3.0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Very high P99 latency (> 3s)"
+            description: "99th percentile request latency is above 3 seconds."
+
+        - alert: HighRequestRate
+          expr: sum(rate(http_requests_total[1m])) > 500
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Unusually high request rate (> 500 req/s)"
+            description: "Request rate has exceeded 500 requests per second."
+
+    # --- Pod / Scaling Alerts ---
+    - name: scaling.rules
+      rules:
+        - alert: PodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total{namespace="app"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod crash looping in app namespace"
+            description: "A pod in the app namespace is restarting frequently."
+
+        - alert: HPAMaxedOut
+          expr: >
+            kube_horizontalpodautoscaler_status_current_replicas{namespace="app"}
+            ==
+            kube_horizontalpodautoscaler_spec_max_replicas{namespace="app"}
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "HPA at maximum replicas"
+            description: "The FastAPI app HPA has been at max replicas for 10 minutes. Consider increasing limits."
+
+        - alert: PodNotReady
+          expr: >
+            kube_pod_status_ready{namespace="app", condition="true"} == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod not ready in app namespace"
+            description: "A pod in the app namespace has not been ready for 5 minutes."
+
+    # --- Runner Alerts ---
+    - name: runner.rules
+      rules:
+        - alert: RunnerPoolMaxed
+          expr: >
+            kube_deployment_status_replicas{namespace="runners"}
+            >=
+            kube_deployment_spec_replicas{namespace="runners"}
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Runner pool at maximum capacity"
+            description: "Self-hosted runner pods are at max capacity for 10 minutes."
+
+        - alert: RunnerPodFailing
+          expr: >
+            kube_pod_container_status_waiting_reason{namespace="runners", reason=~"CrashLoopBackOff|Error"} > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Runner pod failing"
+            description: "A runner pod is in CrashLoopBackOff or Error state."
+
+    # --- Infrastructure Alerts ---
+    - name: infrastructure.rules
+      rules:
+        - alert: HighNodeCPU
+          expr: >
+            100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node CPU utilization > 85%"
+            description: "A node has been above 85% CPU for 10 minutes."
+
+        - alert: HighNodeMemory
+          expr: >
+            (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node memory utilization > 85%"
+            description: "A node has been above 85% memory for 10 minutes."
+
+        - alert: PersistentVolumeAlmostFull
+          expr: >
+            kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "PV almost full (> 85%)"
+            description: "A persistent volume is more than 85% full."

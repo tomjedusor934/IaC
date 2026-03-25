@@ -1,0 +1,71 @@
+# ==============================================================================
+# Application Deploy PRD - Build, Push, Helm upgrade on tag push
+# ==============================================================================
+name: "App Deploy (PRD)"
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  REGION: "europe-west1"
+
+jobs:
+  deploy-prd:
+    name: "Build & Deploy to PRD"
+    runs-on: ${{ vars.RUNNER_LABEL || 'ubuntu-latest' }}
+    environment: prd  # Requires manual approval
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Authenticate to GCP (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./app
+          push: true
+          tags: |
+            ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO_NAME }}/fastapi-app:${{ steps.tag.outputs.VERSION }}
+            ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO_NAME }}/fastapi-app:latest
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+          location: ${{ env.REGION }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Helm upgrade (PRD)
+        run: |
+          helm upgrade --install fastapi-app ./helm/fastapi-app \
+            --namespace app \
+            --values ./helm/fastapi-app/values-prd.yaml \
+            --set image.tag=${{ steps.tag.outputs.VERSION }} \
+            --set image.repository=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO_NAME }}/fastapi-app \
+            --set env.JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
+            --set env.DATABASE_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            --set cloudSqlProxy.instanceConnectionName=${{ secrets.CLOUDSQL_CONNECTION_NAME }} \
+            --wait --timeout 5m

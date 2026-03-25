@@ -1,0 +1,44 @@
+# ==============================================================================
+# PRD environment overrides
+# ==============================================================================
+replicaCount: 3
+
+env:
+  ENVIRONMENT: "prd"
+  LOG_LEVEL: "WARNING"
+  RATE_LIMIT: "100/minute"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: "HERE_APP_DOMAIN_PRD"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: fastapi-app-tls-prd
+      hosts:
+        - "HERE_APP_DOMAIN_PRD"

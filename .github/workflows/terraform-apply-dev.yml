@@ -1,0 +1,54 @@
+# ==============================================================================
+# Terraform Apply DEV - Deploy infrastructure on push to develop
+# ==============================================================================
+name: "Terraform Apply (DEV)"
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "terraform/**"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  TF_VERSION: "1.9.0"
+
+jobs:
+  apply-dev:
+    name: "Apply to DEV"
+    runs-on: ${{ vars.RUNNER_LABEL || 'ubuntu-latest' }}
+    environment: dev
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        env:
+          TF_VAR_github_app_id: ${{ secrets.GH_APP_ID }}
+          TF_VAR_github_app_installation_id: ${{ secrets.GH_APP_INSTALLATION_ID }}
+          TF_VAR_github_app_private_key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          TF_VAR_jwt_secret_key: ${{ secrets.JWT_SECRET_KEY }}

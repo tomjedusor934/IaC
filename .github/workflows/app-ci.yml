@@ -1,0 +1,79 @@
+# ==============================================================================
+# Application CI - Lint, Test, Build on Pull Requests
+# ==============================================================================
+name: "App CI"
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "app/**"
+      - "helm/fastapi-app/**"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: "Lint (ruff)"
+    runs-on: ${{ vars.RUNNER_LABEL || 'ubuntu-latest' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff linter
+        run: ruff check app/
+
+      - name: Run ruff formatter check
+        run: ruff format --check app/
+
+  test:
+    name: "Tests (pytest)"
+    runs-on: ${{ vars.RUNNER_LABEL || 'ubuntu-latest' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r app/requirements.txt
+          pip install -r app/requirements-test.txt
+
+      - name: Run tests
+        run: pytest app/tests/ -v --tb=short
+        env:
+          DATABASE_HOST: "localhost"
+          JWT_SECRET_KEY: "test-secret-key-for-ci"
+
+  docker-build:
+    name: "Docker Build (no push)"
+    runs-on: ${{ vars.RUNNER_LABEL || 'ubuntu-latest' }}
+    needs: [lint, test]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./app
+          push: false
+          tags: fastapi-app:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

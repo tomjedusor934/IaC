@@ -1,0 +1,29 @@
+# ==============================================================================
+# DEV environment overrides
+# ==============================================================================
+replicaCount: 1
+
+env:
+  ENVIRONMENT: "dev"
+  LOG_LEVEL: "DEBUG"
+  RATE_LIMIT: "200/minute"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+pdb:
+  enabled: false
+
+ingress:
+  enabled: false
