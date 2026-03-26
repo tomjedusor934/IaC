@@ -83,6 +83,7 @@ spec:
             - "--structured-logs"
             - "--auto-iam-authn"
             - "--port=5432"
+            - "--private-ip"
             - "{{ .Values.cloudSqlProxy.instanceConnectionName }}"
           securityContext:
             runAsNonRoot: true
