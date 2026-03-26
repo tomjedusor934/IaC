@@ -1,6 +1,6 @@
 # ==============================================================================
 # FastAPI Task Manager - Main application entry point
-# Trigger CI/CD pipeline update (GitHub Actions) when this file is modified.again.
+# Trigger CI/CD pipeline update (GitHub Actions) when this file is modified.
 # ==============================================================================
 import logging
 from contextlib import asynccontextmanager
