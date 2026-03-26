@@ -5,9 +5,12 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.bearer import create_access_token
 from app.config import get_settings
+from app.database import get_db
+from app.services.user_service import UserService
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -30,12 +33,6 @@ class TokenResponse(BaseModel):
 
 
 # NOTE: Simple authentication pointing to DB User for demo
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.database import get_db
-from app.services.user_service import UserService
-
-
 @router.post("/token", response_model=TokenResponse)
 async def login(request: TokenRequest, db: AsyncSession = Depends(get_db)):
     """

@@ -18,6 +18,7 @@ select = [
     "T20",  # flake8-print
 ]
 ignore = [
+    "B008",  # do not perform function call in argument defaults (needed for FastAPI Depends)
     "S105",  # hardcoded-password-string (needed for default JWT secret)
     "S106",  # hardcoded-password-func-arg
 ]

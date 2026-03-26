@@ -52,7 +52,7 @@ async def create_task(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create task",
-        )
+        ) from e
 
 
 @router.get(
@@ -136,7 +136,7 @@ async def update_task(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(e),
-        )
+        ) from e
 
 
 @router.delete(
@@ -174,4 +174,4 @@ async def delete_task(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(e),
-        )
+        ) from e
