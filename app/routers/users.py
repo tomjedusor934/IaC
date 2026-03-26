@@ -4,12 +4,12 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.schemas.user import UserCreate, UserResponse
 from app.schemas.task import ErrorResponse
+from app.schemas.user import UserCreate, UserResponse
 from app.services.user_service import UserService
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ async def create_user(
     Create a new user.
     """
     logger.info(f"Received user creation request: {user_data.username}")
-    
+
     # Check if username exists
     existing_user = await UserService.get_user_by_username(db, user_data.username)
     if existing_user:
@@ -40,7 +40,7 @@ async def create_user(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username already registered.",
         )
-    
+
     try:
         new_user = await UserService.create_user(db, user_data)
         logger.info(f"User created successfully: {new_user.username}")

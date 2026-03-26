@@ -2,9 +2,9 @@
 # FastAPI Task Manager - SQLAlchemy ORM model for Task
 # ==============================================================================
 import uuid
-from datetime import datetime, date
+from datetime import date, datetime
 
-from sqlalchemy import String, Text, Boolean, DateTime, Date
+from sqlalchemy import Boolean, Date, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func

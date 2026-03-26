@@ -1,8 +1,8 @@
 # ==============================================================================
 # FastAPI Task Manager - Business logic layer for Task CRUD
 # ==============================================================================
-import uuid
 import logging
+import uuid
 from datetime import datetime
 
 from sqlalchemy import select
@@ -59,7 +59,12 @@ class TaskService:
         Raises ValueError if the request is stale (out-of-order conflict).
         """
         # Out-of-order detection: reject if incoming timestamp is older
-        if task_data.request_timestamp <= task.last_request_timestamp:
+        last_req = task.last_request_timestamp
+        # SQLite testing compatibility: enforce timezone awareness if lost (naive DB)
+        if last_req.tzinfo is None and task_data.request_timestamp.tzinfo is not None:
+            last_req = last_req.replace(tzinfo=task_data.request_timestamp.tzinfo)
+
+        if task_data.request_timestamp <= last_req:
             raise ValueError(
                 f"Stale request: request_timestamp ({task_data.request_timestamp}) "
                 f"<= last_request_timestamp ({task.last_request_timestamp})"
@@ -92,7 +97,11 @@ class TaskService:
         Delete a task. Checks request_timestamp for out-of-order handling.
         Raises ValueError if the request is stale.
         """
-        if request_timestamp <= task.last_request_timestamp:
+        last_req = task.last_request_timestamp
+        if last_req.tzinfo is None and request_timestamp.tzinfo is not None:
+            last_req = last_req.replace(tzinfo=request_timestamp.tzinfo)
+
+        if request_timestamp <= last_req:
             raise ValueError(
                 f"Stale request: request_timestamp ({request_timestamp}) "
                 f"<= last_request_timestamp ({task.last_request_timestamp})"

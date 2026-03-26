@@ -17,20 +17,24 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 class TokenRequest(BaseModel):
     """Simple username/password login request."""
+
     username: str
     password: str
 
 
 class TokenResponse(BaseModel):
     """JWT token response."""
+
     access_token: str
     token_type: str = "bearer"
 
 
 # NOTE: Simple authentication pointing to DB User for demo
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.database import get_db
 from app.services.user_service import UserService
+
 
 @router.post("/token", response_model=TokenResponse)
 async def login(request: TokenRequest, db: AsyncSession = Depends(get_db)):

@@ -1,21 +1,21 @@
 # ==============================================================================
 # FastAPI Task Manager - Task CRUD Router
 # ==============================================================================
-import uuid
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
 from app.auth.bearer import get_current_user
+from app.database import get_db
 from app.schemas.task import (
-    TaskCreate,
-    TaskUpdate,
-    TaskDelete,
-    TaskResponse,
-    TaskListResponse,
     ErrorResponse,
+    TaskCreate,
+    TaskDelete,
+    TaskListResponse,
+    TaskResponse,
+    TaskUpdate,
 )
 from app.services.task_service import TaskService
 

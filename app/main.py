@@ -8,14 +8,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.config import get_settings
 from app.database import init_db
-from app.middleware.correlation import CorrelationIdMiddleware
 from app.metrics import setup_metrics
-from app.routers import tasks, health, auth, users
+from app.middleware.correlation import CorrelationIdMiddleware
+from app.routers import auth, health, tasks, users
 
 settings = get_settings()
 

@@ -1,9 +1,9 @@
 # ==============================================================================
 # FastAPI Task Manager - Correlation ID Middleware
 # ==============================================================================
-import uuid
 import contextvars
 import logging
+import uuid
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -32,17 +32,12 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         # Add to request state for easy access in route handlers
         request.state.correlation_id = cid
 
-        logger.info(
-            f"[{cid}] {request.method} {request.url.path} - Start"
-        )
+        logger.info(f"[{cid}] {request.method} {request.url.path} - Start")
 
         response: Response = await call_next(request)
 
         # Attach correlation_id to response headers
         response.headers["correlation_id"] = cid
-        logger.info(
-            f"[{cid}] {request.method} {request.url.path} - "
-            f"Status {response.status_code}"
-        )
+        logger.info(f"[{cid}] {request.method} {request.url.path} - Status {response.status_code}")
 
         return response
