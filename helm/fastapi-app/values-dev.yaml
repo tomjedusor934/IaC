@@ -23,10 +23,19 @@ resources:
     memory: 512Mi
 
 pdb:
-  enabled: false
+  enabled: true
+  minAvailable: 1
 
 ingress:
-  enabled: false
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  hosts:
+    - host: "api.35.187.23.141.nip.io"
+      paths:
+        - path: /
+          pathType: Prefix
 
 serviceAccount:
   annotations:
