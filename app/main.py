@@ -15,7 +15,7 @@ from app.config import get_settings
 from app.database import init_db
 from app.middleware.correlation import CorrelationIdMiddleware
 from app.metrics import setup_metrics
-from app.routers import tasks, health, auth
+from app.routers import tasks, health, auth, users
 
 settings = get_settings()
 
@@ -60,6 +60,7 @@ setup_metrics(app)
 
 # --- Include Routers ---
 app.include_router(health.router)
+app.include_router(users.router)
 app.include_router(auth.router)
 app.include_router(tasks.router)
 
