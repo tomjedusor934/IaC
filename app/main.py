@@ -1,5 +1,6 @@
 # ==============================================================================
 # FastAPI Task Manager - Main application entry point
+# Trigger CI/CD pipeline update
 # ==============================================================================
 import logging
 from contextlib import asynccontextmanager
