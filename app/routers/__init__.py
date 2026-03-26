@@ -1,3 +1,3 @@
-from app.routers import tasks, health, auth
+from app.routers import auth, health, tasks, users
 
-__all__ = ["tasks", "health", "auth"]
+__all__ = ["tasks", "health", "auth", "users"]
