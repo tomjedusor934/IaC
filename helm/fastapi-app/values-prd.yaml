@@ -34,11 +34,11 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
-    - host: "HERE_APP_DOMAIN_PRD"
+    - host: "iac.netflouxmaison.fr"
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: fastapi-app-tls-prd
       hosts:
-        - "HERE_APP_DOMAIN_PRD"
+        - "iac.netflouxmaison.fr"

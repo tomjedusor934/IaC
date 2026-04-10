@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 1.5.0"
 
   backend "gcs" {
-    bucket = "HERE_GCS_STATE_BUCKET_NAME"
+    bucket = "my-bucket-state-prod2"
     prefix = "env/prd"
   }
 

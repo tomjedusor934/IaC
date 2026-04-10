@@ -6,11 +6,11 @@
 #   TF_VAR_github_app_id, TF_VAR_github_app_installation_id,
 #   TF_VAR_github_app_private_key, TF_VAR_jwt_secret_key
 
-project_id  = "HERE_GCP_PROJECT_ID_PRD"
+project_id  = "iac-prod-491314"
 region      = "europe-west1"
 environment = "prd"
 
-github_owner = "HERE_GITHUB_OWNER"
-github_repo  = "HERE_GITHUB_REPO_NAME"
+github_owner = "tomjedusor934"
+github_repo  = "IaC"
 
 app_image_tag = "latest"
