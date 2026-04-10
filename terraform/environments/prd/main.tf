@@ -33,13 +33,13 @@ module "gke" {
 
   project_id     = var.project_id
   project_prefix = local.project_prefix
-  region         = var.region
+  region         = "${var.region}-b" # Zonal to avoid GCE_STOCKOUT in regional mode
   network_id     = module.vpc.network_id
   subnet_id      = module.vpc.gke_subnet_id
 
   master_cidr             = "172.16.0.0/28"
   release_channel         = "STABLE"
-  deletion_protection     = true # Protected in prd!
+  deletion_protection     = false # Temporarily false for initial setup
 
   # PRD: larger pools
   default_pool_machine_type = "e2-standard-2"

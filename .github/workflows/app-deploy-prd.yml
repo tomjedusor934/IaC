@@ -53,19 +53,38 @@ jobs:
         uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
-          location: ${{ env.REGION }}
+          location: ${{ env.REGION }}-b
 
       - name: Setup Helm
         uses: azure/setup-helm@v4
+
+      - name: Generate Helm Secrets safely
+        run: |
+          python -c "
+          import os, json
+          data = {
+            'env': {
+              'JWT_SECRET_KEY': os.environ.get('JWT_SECRET_KEY', ''),
+              'DATABASE_PASSWORD': os.environ.get('DATABASE_PASSWORD', '')
+            },
+            'cloudSqlProxy': {
+              'instanceConnectionName': os.environ.get('CLOUDSQL_CONNECTION_NAME', '')
+            }
+          }
+          with open('helm-secrets.json', 'w') as f:
+            json.dump(data, f)
+          "
+        env:
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          DATABASE_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          CLOUDSQL_CONNECTION_NAME: ${{ secrets.CLOUDSQL_CONNECTION_NAME }}
 
       - name: Helm upgrade (PRD)
         run: |
           helm upgrade --install fastapi-app ./helm/fastapi-app \
             --namespace app \
             --values ./helm/fastapi-app/values-prd.yaml \
+            --values helm-secrets.json \
             --set image.tag=${{ steps.tag.outputs.VERSION }} \
             --set image.repository=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO_NAME }}/fastapi-app \
-            --set env.JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
-            --set env.DATABASE_PASSWORD=${{ secrets.DB_PASSWORD }} \
-            --set cloudSqlProxy.instanceConnectionName=${{ secrets.CLOUDSQL_CONNECTION_NAME }} \
             --wait --timeout 5m
